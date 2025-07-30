@@ -83,7 +83,7 @@ jobs:
         coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
         echo "Coverage: $coverage%"
         if (( $(echo "$coverage < 60" | bc -l) )); then
-          echo "Coverage below 80% threshold"
+          echo "Coverage below 60% threshold"
           exit 1
         fi
 
@@ -169,3 +169,22 @@ jobs:
       with:
         name: docker-image
         path: drift-guardian-image.tar
+
+  trivy:
+    runs-on: ubuntu-latest
+    needs: [code-quality, test, integration-test, security, sonarqube, build]
+    steps:
+    - name: Download Docker Image
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+
+    - name: Load Docker Image
+      run: docker load -i drift-guardian-image.tar
+
+    - name: Scan Image
+      uses: aquasecurity/trivy-action@0.32.0
+      with:
+        image-ref: infantry-cloud/drift-guardian:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
