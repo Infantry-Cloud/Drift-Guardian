@@ -74,6 +74,7 @@ jobs:
 
     - name: Unit Tests
       run: |
+        go test -v -tags=unit ./...
         go test -v -race -coverprofile=coverage.out ./...
         go tool cover -html=coverage.out -o coverage.html
 
@@ -161,3 +162,10 @@ jobs:
     - name: Build Docker Image
       run: |
         docker build -t infantry-cloud/drift-guardian:${{ github.sha }} .
+        docker save infantry-cloud/drift-guardian:${{ github.sha }} -o drift-guardian-image.tar
+
+    - name: Upload Docker Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-image
+        path: drift-guardian-image.tar
