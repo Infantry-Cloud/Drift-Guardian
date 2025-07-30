@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Drift Guardian API
+  description: Infrastructure drift detection service for Infantry.cloud
+  version: 0.1.0
+  contact:
+    name: Infantry.cloud
+    url: https://infantry.cloud
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.infantry.cloud/drift-guardian
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /version:
+    get:
+      summary: Get service version
+      operationId: getVersion
+      responses:
+        '200':
+          description: Service version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: v0.1.0
+                  build:
+                    type: string
+                    example: abc123
+                  commit:
+                    type: string
+                    example: 6c2ec6c87d3dbb511af064e7011d639939311008
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+        timestamp:
+          type: string
+          format: date-time
