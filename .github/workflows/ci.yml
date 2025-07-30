@@ -51,7 +51,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24.5'
 
     - name: Unit Tests
       run: |
@@ -75,7 +75,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24.5'
 
     - name: Start test containers
       run: |
@@ -96,7 +96,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24.5'
 
     - name: Run govulncheck
       run: |
@@ -110,7 +110,6 @@ jobs:
 
   sonarqube:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [code-quality, test]
     steps:
     - uses: actions/checkout@v4
@@ -120,14 +119,14 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24.5'
 
     - name: Run tests for SonarQube
       run: |
         go test -v -coverprofile=coverage.out ./...
 
     - name: SonarQube Scan
-      uses: sonarqube-quality-gate-action@master
+      uses: sonarqube-quality-gate-action/sonarqube-quality-gate-action@master
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -141,7 +140,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24.5'
 
     - name: Build
       run: |
