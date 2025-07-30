@@ -186,5 +186,3 @@ jobs:
       uses: aquasecurity/trivy-action@0.32.0
       with:
         image-ref: infantry-cloud/drift-guardian:${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
