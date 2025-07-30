@@ -1,4 +1,4 @@
-FROM golang:1.24.5 as build
+FROM golang:1.24.5 AS build
 
 COPY . .
 
@@ -7,7 +7,7 @@ ENV CGO_ENABLED=0
 ENV GOOS=linux
 ENV GOARCH=amd64
 RUN go build -trimpath -v -a -o app -ldflags="-w -s"
-RUN chmod +x go-goof
+RUN chmod +x app
 
 RUN useradd -u 12345 infantry-cloud
 
