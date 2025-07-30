@@ -172,7 +172,7 @@ jobs:
 
   trivy:
     runs-on: ubuntu-latest
-    needs: [code-quality, test, integration-test, security, sonarqube, build]
+    needs: build
     steps:
     - name: Download Docker Image
       uses: actions/download-artifact@v4
