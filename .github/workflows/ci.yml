@@ -160,4 +160,4 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t infantry-cloud/${{ github.event.repository.name }}:${{ github.sha }} .
+        docker build -t infantry-cloud/drift-guardian:${{ github.sha }} .
