@@ -1,0 +1,36 @@
+type: http_request
+model: http_request
+id: rq_ff2sYcpijZ
+createdAt: 2025-07-31T15:51:11.187445
+updatedAt: 2025-08-02T17:48:57.615493
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3R3JKWHYyNTZSTTlUQTJ0dWdVZFhEOU9Tam1tYlRBVE9NQUp2TUJMcDBZcWh3ZVZiVmoycjhjSTY3MDVBRlNGTnZmQ0ZDRmVOb0FhQT09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "test-repo",
+          "branchName": "feature-branch",
+          "environment": "staging-euw2",
+          "environmentTier": "staging",
+          "driftThreshold": "",
+          "projectId": "70747533",
+          "operation": "plan",
+          "exitCode": 2,
+          "scheduled": true,
+          "timestamp": "2024-01-15T11:00:00Z"
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: Feature Branch - Should Not Increment Drift
+sortPriority: 4000.0
+url: http://localhost:8080/environments
+urlParameters: []

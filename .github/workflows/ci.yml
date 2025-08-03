@@ -1,0 +1,166 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'bugfix/*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Upload source code
+      uses: actions/upload-artifact@v4
+      with:
+        name: source-code
+        path: .
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+    - name: Download source code
+      uses: actions/download-artifact@v4
+      with:
+        name: source-code
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.5'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        args: --timeout=5m
+
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v5.3.0
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  vuln-scan:
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+    - name: Download source code
+      uses: actions/download-artifact@v4
+      with:
+        name: source-code
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.5'
+
+    - name: Run govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+
+    - name: Run Snyk
+      uses: snyk/actions/golang@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  unit-test:
+    runs-on: ubuntu-latest
+    needs: static-analysis
+    steps:
+    - name: Download source code
+      uses: actions/download-artifact@v4
+      with:
+        name: source-code
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.5'
+
+    - name: Unit Tests
+      run: |
+        go test -v -tags=unit -race -coverprofile=coverage.out ./...
+        go tool cover -html=coverage.out -o coverage.html
+
+    - name: Coverage Check
+      run: |
+        coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Coverage: $coverage%"
+        if (( $(echo "$coverage < 60" | bc -l) )); then
+          echo "Coverage below 60% threshold"
+          exit 1
+        fi
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: vuln-scan
+    steps:
+    - name: Download source code
+      uses: actions/download-artifact@v4
+      with:
+        name: source-code
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.5'
+
+    - name: Start test containers
+      run: |
+        docker run -d --name redis-test -p 6379:6379 redis:7-alpine
+        docker run -d --name minio-test -p 9000:9000 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin minio/minio server /data
+
+    - name: Integration Tests
+      run: go test -v -tags=integration ./...
+      env:
+        REDIS_URL: redis://localhost:6379
+        S3_ENDPOINT: http://localhost:9000
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [unit-test, integration-test]
+    steps:
+    - name: Download source code
+      uses: actions/download-artifact@v4
+      with:
+        name: source-code
+
+    - name: Build Docker Image
+      run: |
+        docker build -t infantry-cloud/drift-guardian:${{ github.sha }} .
+        docker save infantry-cloud/drift-guardian:${{ github.sha }} -o drift-guardian-image.tar
+
+    - name: Upload Docker Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-image
+        path: drift-guardian-image.tar
+
+  trivy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download Docker Image
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+
+    - name: Load Docker Image
+      run: docker load -i drift-guardian-image.tar
+
+    - name: Scan Image
+      uses: aquasecurity/trivy-action@0.32.0
+      with:
+        image-ref: infantry-cloud/drift-guardian:${{ github.sha }}

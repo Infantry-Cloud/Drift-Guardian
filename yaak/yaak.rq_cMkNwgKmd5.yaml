@@ -1,0 +1,36 @@
+type: http_request
+model: http_request
+id: rq_cMkNwgKmd5
+createdAt: 2025-07-31T15:48:52.816716
+updatedAt: 2025-08-02T17:48:53.325144
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3SGsva1lQSHdiVE9JYU8yRVZDVWM2bFZvaUhEeFJMbHNkWHJ5WHBsRng1YW4zVHRIbVk5ZXFUbDc4WnRwb1I3aVQzNVBhYXZhV0VZdz09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "test-repo",
+          "branchName": "main",
+          "environment": "staging-euw2",
+          "environmentTier": "staging",
+          "driftThreshold": "",
+          "projectId": "70747533",
+          "operation": "plan",
+          "exitCode": 2,
+          "scheduled": false,
+          "timestamp": "2024-01-15T10:55:00Z"
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: Non-scheduled Plan - Should Not Increment Drift
+sortPriority: 3000.0
+url: http://localhost:8080/environments
+urlParameters: []

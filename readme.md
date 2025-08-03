@@ -1,0 +1,2 @@
+# Drift Guardian
+Drift Guardian is a tool for monitoring and managing infrastructure drift in Terraform-managed environments. It tracks when infrastructure configurations drift from their expected state automatically creating and managing GitLab issues when drift exceeds configurable thresholds.

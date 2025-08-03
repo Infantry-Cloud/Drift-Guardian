@@ -1,0 +1,470 @@
+openapi: 3.0.3
+info:
+  title: Drift Guardian API
+  description: |
+    Webhook-based Terraform infrastructure drift detection service that receives notifications from Terraform pipelines when drift is detected and manages GitLab issues based on configurable thresholds.
+    
+    The service follows a GitOps approach where Git repository state is the source of truth and tracks drift across multiple environments and repositories.
+  version: 0.1.2
+  contact:
+    name: Drift Guardian Support
+    url: https://github.com/danielbooth/drift-guardian
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://drift-guardian.your-domain.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+  - {} # Allow requests without authentication (for health endpoints)
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Kubernetes liveness probe endpoint that returns basic service health status.
+        
+        Used by Kubernetes to determine if the container should be restarted.
+        
+        **Authentication:** This endpoint is publicly accessible and does not require authentication.
+      operationId: getHealth
+      security: []
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '405':
+          description: Method not allowed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Method not allowed"
+  
+  /ready:
+    get:
+      summary: Readiness check endpoint
+      description: |
+        Kubernetes readiness probe endpoint that validates service dependencies.
+        
+        Checks Redis connectivity and returns appropriate status for traffic routing decisions.
+        
+        **Authentication:** This endpoint is publicly accessible and does not require authentication.
+      operationId: getReady
+      security: []
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: Service is not ready (dependencies unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '405':
+          description: Method not allowed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Method not allowed"
+
+  /environments:
+    post:
+      summary: Process Terraform pipeline notifications
+      description: |
+        Receives webhook notifications from Terraform CI/CD pipelines about infrastructure drift detection.
+        
+        The endpoint processes drift notifications, tracks drift increments, manages GitLab issues when thresholds are exceeded, and maintains operation logs in Redis.
+        
+        **Key Behaviors:**
+        - For scheduled `plan` operations with exit code 2: increments drift counter
+        - When drift exceeds threshold: creates or updates GitLab issues
+        - For successful `apply` operations: resets drift counters and closes issues
+        - Maintains operation logs and environment data in Redis
+        
+        **Authentication:** This endpoint requires bearer token authentication when `ENABLE_AUTHENTICATION=true`.
+      operationId: handleEnvironments
+      security:
+        - BearerAuth: []
+      tags:
+        - Drift Detection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+            examples:
+              drift_detected:
+                summary: Drift detected in scheduled plan
+                description: Example of a scheduled Terraform plan that detected drift (exit code 2)
+                value:
+                  repoName: "my-terraform-repo"
+                  branchName: "main"
+                  environment: "production"
+                  environmentTier: "prod"
+                  driftThreshold: "3"
+                  projectId: "12345"
+                  operation: "plan"
+                  exitCode: 2
+                  scheduled: true
+                  timestamp: "2025-01-31T10:30:00Z"
+                  planOutput: "Terraform will perform the following actions:\n\n  # aws_instance.example will be updated in-place\n..."
+              apply_success:
+                summary: Successful apply operation
+                description: Example of a successful Terraform apply that resets drift counters
+                value:
+                  repoName: "my-terraform-repo"
+                  branchName: "main"
+                  environment: "production"
+                  environmentTier: "prod"
+                  driftThreshold: "3"
+                  projectId: "12345"
+                  operation: "apply"
+                  exitCode: 0
+                  scheduled: false
+                  timestamp: "2025-01-31T11:15:00Z"
+              no_drift:
+                summary: Plan with no drift detected
+                description: Example of a Terraform plan with no changes (exit code 0)
+                value:
+                  repoName: "my-terraform-repo"
+                  branchName: "main"
+                  environment: "staging"
+                  environmentTier: "nonprod"
+                  driftThreshold: "5"
+                  projectId: "12345"
+                  operation: "plan"
+                  exitCode: 0
+                  scheduled: true
+                  timestamp: "2025-01-31T10:30:00Z"
+      responses:
+        '200':
+          description: Successfully processed the drift detection request
+          headers:
+            X-Environment-Tier:
+              description: The environment tier (prod, nonprod, etc.)
+              schema:
+                type: string
+                example: "prod"
+            X-Drift-Increment:
+              description: Current drift increment count for this environment
+              schema:
+                type: string
+                example: "2"
+            X-Project-Id:
+              description: GitLab project ID for issue management
+              schema:
+                type: string
+                example: "12345"
+            X-Issue-ID:
+              description: GitLab issue ID (only present when drift threshold exceeded)
+              schema:
+                type: string
+                example: "456"
+            X-Issue-URL:
+              description: GitLab issue URL (only present when drift threshold exceeded)
+              schema:
+                type: string
+                example: "https://gitlab.com/project/issues/456"
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: |
+                  Formatted response containing environment data and operation log.
+                  
+                  Format: "Environment values retrieved for repository: {repoName}, environment: {environment}
+                  Values: {"environmentTier": "{tier}", "projectID": "{id}", "driftIncrement": "{count}", "issueID": "{issueId}", "issueURL": "{url}", "log": {logData}}"
+                example: |
+                  Environment values retrieved for repository: my-terraform-repo, environment: production
+                  Values: {"environmentTier": "prod", "projectID": "12345", "driftIncrement": "2", "issueID": "456", "issueURL": "https://gitlab.com/project/issues/456", "log": {"operation": "plan", "timestamp": "2025-01-31T10:30:00Z"}}
+        '401':
+          description: Unauthorized - Invalid or missing bearer token
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Authentication error message
+              examples:
+                missing_token:
+                  summary: Missing bearer token
+                  value: "Unauthorized: Bearer token required"
+                invalid_token:
+                  summary: Invalid bearer token
+                  value: "Unauthorized: Invalid token"
+        '400':
+          description: Bad Request - Invalid payload or missing required fields
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Error message describing the validation failure
+              examples:
+                missing_repo_name:
+                  summary: Missing repository name
+                  value: "Missing repoName in payload"
+                missing_branch_name:
+                  summary: Missing branch name
+                  value: "Missing branchName in payload"
+                missing_environment:
+                  summary: Missing environment
+                  value: "Missing environment in payload"
+                missing_environment_tier:
+                  summary: Missing environment tier
+                  value: "Missing environmentTier in payload"
+                missing_project_id:
+                  summary: Missing project ID
+                  value: "Missing projectId in payload"
+                invalid_operation:
+                  summary: Invalid Terraform operation
+                  value: "Invalid terraform operation in payload"
+                invalid_json:
+                  summary: JSON parsing error
+                  value: "Error parsing JSON payload"
+                read_body_error:
+                  summary: Request body reading error
+                  value: "Error reading request body"
+        '405':
+          description: Method Not Allowed - Only POST requests are accepted
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Method not allowed"
+        '500':
+          description: Internal Server Error - Redis connection or GitLab API failures
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Error message describing the internal server error
+              examples:
+                redis_error:
+                  summary: Redis connection failure
+                  value: "Redis connection error: unable to connect to Redis server"
+                gitlab_api_error:
+                  summary: GitLab API failure
+                  value: "GitLab API error: failed to create issue"
+                environment_data_error:
+                  summary: Environment data retrieval error
+                  value: "Error retrieving environment data from Redis"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer token authentication for webhook endpoints.
+        
+        Configure the `BEARER_TOKEN` environment variable and set `ENABLE_AUTHENTICATION=true` to enable authentication.
+        
+        Example: `Authorization: Bearer your-secret-token`
+        
+  schemas:
+    Payload:
+      type: object
+      required:
+        - repoName
+        - branchName
+        - environment
+        - environmentTier
+        - projectId
+        - operation
+      properties:
+        repoName:
+          type: string
+          description: Name of the Git repository where Terraform code is stored
+          example: "my-terraform-repo"
+          minLength: 1
+        branchName:
+          type: string
+          description: Git branch name where the Terraform operation was executed
+          example: "main"
+          minLength: 1
+        environment:
+          type: string
+          description: Environment name (production, staging, development, etc.)
+          example: "production"
+          minLength: 1
+        environmentTier:
+          type: string
+          description: Environment tier classification
+          example: "prod"
+          enum:
+            - "prod"
+            - "nonprod"
+            - "dev"
+            - "staging"
+            - "test"
+        driftThreshold:
+          type: string
+          description: |
+            Drift threshold before creating GitLab issues. When drift increment reaches this value, 
+            a GitLab issue will be created or updated. Can be overridden per environment.
+          example: "3"
+          pattern: '^[0-9]+$'
+        projectId:
+          type: string
+          description: GitLab project ID for issue management and tracking
+          example: "12345"
+          minLength: 1
+        operation:
+          type: string
+          description: Terraform operation that was executed
+          example: "plan"
+          enum:
+            - "plan"
+            - "apply"
+            - "destroy"
+        exitCode:
+          type: integer
+          description: |
+            Terraform command exit code:
+            - 0: Success, no changes
+            - 1: Error occurred
+            - 2: Success, changes detected (for plan operations, indicates drift)
+          example: 2
+          enum:
+            - 0
+            - 1
+            - 2
+        scheduled:
+          type: boolean
+          description: |
+            Whether this was a scheduled operation (true) or manual operation (false).
+            Only scheduled plan operations with exit code 2 increment the drift counter.
+          example: true
+        timestamp:
+          type: string
+          format: date-time
+          description: |
+            ISO 8601 timestamp when the Terraform operation was executed.
+            If not provided, server timestamp will be used.
+          example: "2025-01-31T10:30:00Z"
+        planOutput:
+          type: string
+          description: |
+            Terraform plan output (optional). Only included for plan operations.  
+            Contains the detailed changes that Terraform detected.
+          example: |
+            Terraform will perform the following actions:
+
+              # aws_instance.example will be updated in-place
+              ~ resource "aws_instance" "example" {
+                  id                                   = "i-1234567890abcdef0"
+                  ~ instance_type                      = "t2.micro" -> "t3.micro"
+                    # (29 unchanged attributes hidden)
+                }
+
+            Plan: 0 to add, 1 to change, 0 to destroy.
+
+    HealthResponse:
+      type: object
+      description: Health check response for Kubernetes liveness probes
+      required:
+        - status
+        - timestamp
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          description: Overall health status of the service
+          example: "healthy"
+          enum:
+            - "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the health check was performed
+          example: "2025-01-31T10:30:00Z"
+        service:
+          type: string
+          description: Service name identifier
+          example: "drift-guardian"
+        version:
+          type: string
+          description: Current service version
+          example: "0.1.2"
+
+    ReadinessResponse:
+      type: object
+      description: Readiness check response for Kubernetes readiness probes
+      required:
+        - status
+        - timestamp
+        - service
+        - dependencies
+      properties:
+        status:
+          type: string
+          description: Overall readiness status of the service
+          example: "ready"
+          enum:
+            - "ready"
+            - "not ready"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the readiness check was performed
+          example: "2025-01-31T10:30:00Z"
+        service:
+          type: string
+          description: Service name identifier
+          example: "drift-guardian"
+        dependencies:
+          type: object
+          description: Status of service dependencies
+          properties:
+            redis:
+              type: object
+              description: Redis connectivity status
+              required:
+                - healthy
+                - response_time_ms
+              properties:
+                healthy:
+                  type: boolean
+                  description: Whether Redis is accessible and responding
+                  example: true
+                status:
+                  type: string
+                  description: Redis connection status message
+                  example: "connected"
+                error:
+                  type: string
+                  description: Error message if Redis is not healthy
+                  example: "dial tcp localhost:6379: connect: connection refused"
+                response_time_ms:
+                  type: integer
+                  description: Redis ping response time in milliseconds
+                  example: 2
+
+  securitySchemes: {}
+
+tags:
+  - name: Health
+    description: Health check and readiness probe endpoints for Kubernetes
+  - name: Drift Detection
+    description: Terraform infrastructure drift detection and management

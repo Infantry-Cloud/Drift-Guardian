@@ -1,0 +1,14 @@
+type: workspace
+model: workspace
+id: wk_PxnjW3Ki9N
+createdAt: 2025-07-31T15:21:50.423104
+updatedAt: 2025-07-31T15:21:56.199608
+authentication: {}
+authenticationType: null
+description: ''
+headers: []
+name: Drift Detection
+encryptionKeyChallenge: eUE0azNuQwFpgXt1HZHfFGlbfS7XhdmvgRwUcWGaV8f6vzEpqD/IgEOu4NKZAk/iSD/S9rLejGrCtRgRWSgmdqFs06A5ME0pRIpGar4eoo82kkZSaJqLS3Dr7HB3tMAw3mo=
+settingValidateCertificates: true
+settingFollowRedirects: true
+settingRequestTimeout: 0

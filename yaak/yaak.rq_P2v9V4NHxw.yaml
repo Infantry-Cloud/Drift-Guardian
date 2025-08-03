@@ -1,0 +1,18 @@
+type: http_request
+model: http_request
+id: rq_P2v9V4NHxw
+createdAt: 2025-08-01T18:19:31.753614
+updatedAt: 2025-08-01T18:19:47.775590
+workspaceId: wk_PxnjW3Ki9N
+folderId: fl_tifGMhJTob
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers: []
+method: GET
+name: Readiness Check
+sortPriority: 1000.0
+url: http://localhost:8080/ready
+urlParameters: []

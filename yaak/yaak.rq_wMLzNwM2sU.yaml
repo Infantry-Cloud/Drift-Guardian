@@ -1,0 +1,36 @@
+type: http_request
+model: http_request
+id: rq_wMLzNwM2sU
+createdAt: 2025-07-31T15:30:37.674669
+updatedAt: 2025-08-02T17:48:44.045874
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3RjEzSXpkaEx3aEQ4czBnSnlXWVNqMno3alZ1dm0vWmhtOW1IdStEa2VrNHNwd2hHQWQzcXJNUDVxU1BHMkgyUHBPUTNPb2dzZldMZz09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "test-repo",
+          "branchName": "main",
+          "environment": "staging-euw2",
+          "environmentTier": "staging",
+          "driftThreshold": "",
+          "projectId": "70747533",
+          "operation": "plan",
+          "exitCode": 0,
+          "scheduled": true,
+          "timestamp": "2024-01-15T10:30:00Z"
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: Plan Operation - No Drift (Exit Code 0)
+sortPriority: 0.0
+url: http://localhost:8080/environments
+urlParameters: []

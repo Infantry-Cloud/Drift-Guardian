@@ -1,0 +1,37 @@
+type: http_request
+model: http_request
+id: rq_VZgha5WSTR
+createdAt: 2025-07-31T15:47:49.102383
+updatedAt: 2025-08-02T17:48:26.743522
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3RjY2UkdkR3hLbHlVTUprRGJqaVhpUzFrWDBzVUkzaFVOYVpybVZob3dEZGU4R29xR0ZkZEIwQTgvZ1FTQ2k0ZjFDcFlLRkd1dFcvdz09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "test-repo",
+          "branchName": "main",
+          "environment": "staging-euw2",
+          "environmentTier": "staging",
+          "driftThreshold": "",
+          "projectId": "70747533",
+          "operation": "plan",
+          "exitCode": 2,
+          "scheduled": true,
+          "timestamp": "2024-01-15T10:35:00Z",
+          "planOutput": "Plan: 1 to add, 0 to change, 0 to destroy."
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: Plan Operation - Drift Detected (Exit Code 2)
+sortPriority: 1000.0
+url: http://localhost:8080/environments
+urlParameters: []

@@ -1,0 +1,36 @@
+type: http_request
+model: http_request
+id: rq_RBqefc8nKN
+createdAt: 2025-07-31T15:51:58.779563
+updatedAt: 2025-08-02T17:49:08.197760
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3SHRXWWZ5VUZCMGRZNDRNWjdLcjBlc1A5TS95bmhjNThFemlIWGl5RGR2VkF2N0lnaElES0h4dG91NG5HSHNDUWlxbXZWQlVXS0VtZz09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "critical-app",
+          "branchName": "main",
+          "environment": "production",
+          "environmentTier": "production",
+          "driftThreshold": "5",
+          "projectId": "70747533",
+          "operation": "plan",
+          "exitCode": 2,
+          "scheduled": true,
+          "timestamp": "2024-01-15T11:05:00Z"
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: High Threshold Environment
+sortPriority: 6000.0
+url: http://localhost:8080/environments
+urlParameters: []

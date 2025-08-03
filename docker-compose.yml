@@ -1,0 +1,25 @@
+services:
+  drift_guardian:
+    build: .
+    links:
+      - 'redis_database'
+    ports:
+      - '8080:8080'
+    environment:
+      REDIS_URL: "redis://default:password@redis_database:6379/0"
+      GITLAB_API_TOKEN: "${GITLAB_TOKEN}"
+      GITLAB_API_URL: "https://gitlab.com/api/v4"
+      DEFAULT_DRIFT_THRESHOLD: 2
+      COMPARISON_BRANCH: "main"
+      GITLAB_SKIP_TLS_VERIFY: true
+      ENABLE_AUTHENTICATION: true
+      BEARER_TOKEN: "DvBRcszRd4S9BX2h"
+      LOG_LEVEL: "info"
+
+  redis_database:
+    image: bitnami/valkey:8.1.1
+    ports: 
+      - '6379:6379'
+    environment:
+      VALKEY_PASSWORD: password
+      VALKEY_DATABASE: drift

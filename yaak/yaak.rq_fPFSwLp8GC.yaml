@@ -1,0 +1,36 @@
+type: http_request
+model: http_request
+id: rq_fPFSwLp8GC
+createdAt: 2025-07-31T15:48:02.792225
+updatedAt: 2025-08-02T17:48:48.991885
+workspaceId: wk_PxnjW3Ki9N
+folderId: null
+authentication:
+  token: ${[ secure(value=b64'WUVOQ19lVUUwYXpOdVF3SCtpalZnVEVMTjc0MFVOWHluMENtRExMLzRLeEZkM0FucDlmdWpFWUdXQnZnT3pNSndkZ285eTg1L0dtR0NTYkxaK01MQ1JETlYvQT09') ]}
+authenticationType: bearer
+body:
+  text: |-
+    {
+          "repoName": "test-repo",
+          "branchName": "main",
+          "environment": "staging-euw2",
+          "environmentTier": "staging",
+          "driftThreshold": "",
+          "projectId": "70747533",
+          "operation": "apply",
+          "exitCode": 0,
+          "scheduled": false,
+          "timestamp": "2024-01-15T10:40:00Z"
+        }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: null
+method: POST
+name: Apply Operation - Success
+sortPriority: 2000.0
+url: http://localhost:8080/environments
+urlParameters: []
