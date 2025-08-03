@@ -34,7 +34,7 @@ func main() {
 		},
 	})))
 
-	slog.Info("Drift Guardian starting", "version", "0.1.2")
+	slog.Info("Drift Guardian starting", "version", "0.2.1")
 
 	// Log configuration (sanitized)
 	slog.Info("Configuration loaded",
