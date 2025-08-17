@@ -144,7 +144,7 @@ func main() {
 
 	driftThreshold := os.Getenv("DRIFT_THRESHOLD")
 	if driftThreshold == "" {
-		debugLog("Drift Threshold Override not setting, using 'default'\n")
+		debugLog("Drift threshold override not set, using 'default'\n")
 	}
 
 	branchName := os.Getenv("CI_COMMIT_BRANCH")

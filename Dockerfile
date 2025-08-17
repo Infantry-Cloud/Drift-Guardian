@@ -1,4 +1,4 @@
-FROM golang:1.24.4 AS build
+FROM golang:1.24.4 AS builder
 
 COPY . .
 
@@ -12,8 +12,8 @@ RUN chmod +x drift-guardian
 RUN useradd -u 12345 infantry-cloud
 
 FROM scratch
-COPY --from=build /go/drift-guardian /drift-guardian
-COPY --from=build /etc/passwd /etc/passwd
+COPY --from=builder /go/drift-guardian /drift-guardian
+COPY --from=builder /etc/passwd /etc/passwd
 USER infantry-cloud
 ENTRYPOINT ["/drift-guardian"]
 

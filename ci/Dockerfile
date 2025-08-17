@@ -9,12 +9,16 @@ RUN go mod init drift-guardian && \
     CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o terraform .
 
 FROM base
+
 RUN mv $(which terraform) /usr/local/bin/terraform-bin
 
 # Install dependencies
 RUN apk update && \
     apk add aws-cli && \
     apk add helm
+
+ENV TENV_AUTO_INSTALL=true
+ENV TENV_QUIET=true
 
 COPY --from=builder /src/terraform /usr/local/bin/terraform
 RUN chmod +x /usr/local/bin/terraform
